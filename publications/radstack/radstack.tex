@@ -112,7 +112,18 @@ frameworks. Events can come in days late, and may need to be corrected after
 the fact. Large batches of data may also need to be reprocessed when new
 columns are added or removed.
 
-The RADStack is an open source, end-to-end solution meant to offer flexible,
+Combining batch processing, streaming processing, and a serving layer in a
+single technology stack is known as a lambda
+architecture\cite{hausenblas2014lambda}. In lambda architectures, data entering
+the system is concurrently fed to both the batch and streaming processing
+layer. The streaming layer is responsible for immediately processing incoming
+data, however, the processed data may suffer from duplicated events and other
+imperfections in data accuracy. The batch layer processes incoming data much
+slower than the streaming layer, but is able to provide accurate views of data.
+The serving layer merges the results from the batch and streaming layers and
+provides an interface for queries.
+
+The RADStack is an open source lambda architecture implementation meant to offer flexible,
 low-latency analytic queries on near real-time data. The solution combines the
 low latency guarantees of stream processors and the correctness and flexibility
 guarantees of batch processors. It also introduces a serving layer specifically
@@ -156,7 +167,7 @@ discuss the related solutions.
 \label{tab:sample_data}
 \end{table*}
 
-The RADStack was first developed to address problems in the onlne advertising.
+The RADStack was first developed to address problems in the online advertising.
 In online advertising, automated systems from different organizations will
 place bids against one another to display users ads in the milliseconds before
 a webpage loads. These actions generate a tremendous volume of data. The data
@@ -296,18 +307,6 @@ LZ4\cite{collet2013lz4} compression. String columns are dictionary encoded,
 similar to other data stores such as PowerDrill\cite{hall2012processing}.
 Additional indexes may be created for particular columns. For example, Druid
 will by default create inverted indexes for string columns.
-
-\subsection{Filters}
-
-Real-world OLAP queries often ask for the aggregated totals for some set of
-metrics, filtered for some boolean expression of dimension specifications, over
-some period of time. An example query for Table~\ref{tab:sample_data} may ask:
-“How many clicks occurred and how much revenue was generated for publishers
-bieberfever.com and ultratrimfast.com?”. 
-
-Consider the publisher column in Table~\ref{tab:sample_data}, a string column.
-For each unique publisher in Table 1, we can generate an inverted index that
-tells us in which table rows a particular page is seen. 
 
 \subsection{Streaming Data Ingestion}
 Druid real-time nodes encapsulate the functionality to ingest, query, and create
@@ -744,14 +743,6 @@ spikes in latency, as observed on February 19, where network issues on
 the broker nodes were compounded by very high query load on one of our
 largest data sources.
 
-\begin{figure}
-\centering
-\includegraphics[width = 2.3in]{avg_query_latency}
-\includegraphics[width = 2.3in]{query_percentiles}
-\caption{Query latencies of production data sources.}
-\label{fig:query_latency}
-\end{figure}
-
 \subsection{Query Benchmarks on TPC-H Data}
 We also present Druid benchmarks on TPC-H data.  Most TPC-H queries do not
 directly apply to Druid, so we selected queries more typical of Druid's
@@ -763,6 +754,14 @@ aggregation queries do. The increase in speed of a parallel computing system is
 often limited by the time needed for the sequential operations of the system.
 In this case, queries requiring a substantial amount of work at the broker
 level do not parallelize as well.
+
+\begin{figure}
+\centering
+\includegraphics[width = 2.3in]{avg_query_latency}
+\includegraphics[width = 2.3in]{query_percentiles}
+\caption{Query latencies of production data sources.}
+\label{fig:query_latency}
+\end{figure}
 
 \begin{figure}
 \centering
@@ -784,6 +783,15 @@ time interval and 36,246,530 rows/second/core for a \texttt{select sum(float)}
 type query.
 
 \subsection{Data Ingestion Performance}
+To showcase the ingestion latency of the RADStack, we selected the top seven
+production datasources in terms of peak events ingested per second for early
+2015. These datasources are described in Table~\ref{tab:ingestion}. Our
+production ingestion setup used over 40 nodes, each with 60GB of RAM and 32
+cores (12 x Intel\textsuperscript\textregistered
+Xeon\textsuperscript\textregistered E5-2670). In this setup, many other Druid
+related ingestion tasks were running concurrently on the machines. Each
+pipeline for each datasource involved transforms and joins.
+
 \begin{table}
   \centering
   \scriptsize\begin{tabular}{| l | l | l | l |}
@@ -802,22 +810,6 @@ type query.
   \label{tab:ingestion}
 \end{table}
 
-\begin{figure}
-\centering
-\includegraphics[width = 2.3in]{radstack-event-throughput}
-\caption{Ingestion rates for various production datasources.}
-\label{fig:ingestion_rates}
-\end{figure}
-
-To showcase the ingestion latency of the RADStack, we selected the top seven
-production datasources in terms of peak events ingested per second for early
-2015. These datasources are described in Table~\ref{tab:ingestion}. Our
-production ingestion setup used over 40 nodes, each with 60GB of RAM and 32
-cores (12 x Intel\textsuperscript\textregistered
-Xeon\textsuperscript\textregistered E5-2670). In this setup, many other Druid
-related ingestion tasks were running concurrently on the machines. Each
-pipeline for each datasource involved transforms and joins.
-
 Ingestion latency is heavily dependent on the complexity of the data set being
 ingested. The data complexity is determined by the number of dimensions in each
 event, the number of metrics in each event, and the types of aggregations we
@@ -825,8 +817,7 @@ want to perform on those metrics. With the most basic data set (one that only
 has a timestamp column), our setup can ingest data at a rate of 800,000
 events/second/core, which is really just a measurement of how fast we can
 deserialize events. At peak, a single node was able to process 62259
-events/second. The ingestion latency of all of our production datasources is
-shown in Figure~\ref{fig:ingestion_rates}. The total peak events per second was
+events/second. The total peak events per second was
 840500. The median events per second was 590100. The first and third quantiles
 were 487000 events/s and 663200 events/s respectively. 
 
@@ -895,7 +886,6 @@ hardware, and various other system bottlenecks.
 
 \subsection{Hybrid Batch/Streaming Workflows}
 
-\subsubsection{Spark Ecosystem}
 Spark\cite{zaharia2012resilient} is a cluster computing framework optimized for
 iterative workflows.  Spark Streaming is a separate project that converts
 sequences of tuples into immutable micro-batches. Each micro-batch can be
