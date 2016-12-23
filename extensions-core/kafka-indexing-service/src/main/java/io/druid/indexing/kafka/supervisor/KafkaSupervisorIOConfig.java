@@ -37,6 +37,7 @@ public class KafkaSupervisorIOConfig
   private final Integer taskCount;
   private final Duration taskDuration;
   private final Map<String, String> consumerProperties;
+  private final Map<String, Long> startingOffsets;
   private final Duration startDelay;
   private final Duration period;
   private final boolean useEarliestOffset;
@@ -56,7 +57,8 @@ public class KafkaSupervisorIOConfig
       @JsonProperty("useEarliestOffset") Boolean useEarliestOffset,
       @JsonProperty("completionTimeout") Period completionTimeout,
       @JsonProperty("lateMessageRejectionPeriod") Period lateMessageRejectionPeriod,
-      @JsonProperty("skipOffsetGaps") Boolean skipOffsetGaps
+      @JsonProperty("skipOffsetGaps") Boolean skipOffsetGaps,
+      @JsonProperty("startingOffsets") Map<String, Long> startingOffsets
   )
   {
     this.topic = Preconditions.checkNotNull(topic, "topic");
@@ -77,6 +79,8 @@ public class KafkaSupervisorIOConfig
                                       ? Optional.<Duration>absent()
                                       : Optional.of(lateMessageRejectionPeriod.toStandardDuration());
     this.skipOffsetGaps = skipOffsetGaps != null ? skipOffsetGaps : false;
+
+    this.startingOffsets = startingOffsets;
   }
 
   @JsonProperty
@@ -107,6 +111,12 @@ public class KafkaSupervisorIOConfig
   public Map<String, String> getConsumerProperties()
   {
     return consumerProperties;
+  }
+
+  @JsonProperty
+  public Map<String, Long> getStartingOffsets()
+  {
+    return startingOffsets;
   }
 
   @JsonProperty
