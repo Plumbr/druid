@@ -1606,7 +1606,8 @@ public class KafkaSupervisorTest extends EasyMockSupport
         new Period("PT30S"),
         useEarliestOffset,
         new Period("PT30M"),
-        lateMessageRejectionPeriod
+        lateMessageRejectionPeriod,
+        null
     );
 
     KafkaIndexTaskClientFactory taskClientFactory = new KafkaIndexTaskClientFactory(null, null)

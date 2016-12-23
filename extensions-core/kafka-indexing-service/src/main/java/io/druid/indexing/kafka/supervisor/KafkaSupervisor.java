@@ -1335,7 +1335,7 @@ public class KafkaSupervisor implements Supervisor
     Map<Integer, Long> metadataOffsets = getOffsetsFromMetadataStorage();
     if (metadataOffsets.get(partition) != null) {
       offset = metadataOffsets.get(partition);
-      log.debug("Getting offset [%,d] from metadata storage for partition [%d]", offset, partition);
+      log.info("Getting offset [%,d] from metadata storage for partition [%d]", offset, partition);
 
       long latestKafkaOffset = getOffsetFromKafkaForPartition(partition, false);
       if (offset > latestKafkaOffset) {
@@ -1350,9 +1350,20 @@ public class KafkaSupervisor implements Supervisor
         );
       }
 
+    } else if(ioConfig.getStartingOffsets() != null) {
+      final String partitionAsString = Integer.toString(partition);
+
+      if(ioConfig.getStartingOffsets().containsKey(partitionAsString)) {
+        offset = ioConfig.getStartingOffsets().get(partitionAsString);
+        log.info("Getting offset [%,d] from the task specification for partition [%d]", offset, partition);
+      } else {
+        throw new ISE(
+            "Starting offsets specified for supervisor is missing partition [%d]: %s", partition, ioConfig.getStartingOffsets()
+        );
+      }
     } else {
       offset = getOffsetFromKafkaForPartition(partition, ioConfig.isUseEarliestOffset());
-      log.debug("Getting offset [%,d] from Kafka for partition [%d]", offset, partition);
+      log.info("Getting offset [%,d] from Kafka for partition [%d]", offset, partition);
     }
 
     return offset;
