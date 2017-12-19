@@ -33,17 +33,18 @@ import io.druid.java.util.common.logger.Logger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -117,11 +118,10 @@ public class DatasourceInputFormat extends InputFormat<NullWritable, InputRow>
     List<WindowedDataSegment> list = new ArrayList<>();
     long size = 0;
 
-    JobConf dummyConf = new JobConf();
-    org.apache.hadoop.mapred.InputFormat fio = supplier.get();
+    InputFormat<LongWritable, Text> fio = supplier.get();
     for (WindowedDataSegment segment : segments) {
       if (size + segment.getSegment().getSize() > maxSize && size > 0) {
-        splits.add(toDataSourceSplit(list, fio, dummyConf));
+        splits.add(toDataSourceSplit(list, fio, context));
         list = Lists.newArrayList();
         size = 0;
       }
@@ -131,7 +131,7 @@ public class DatasourceInputFormat extends InputFormat<NullWritable, InputRow>
     }
 
     if (list.size() > 0) {
-      splits.add(toDataSourceSplit(list, fio, dummyConf));
+      splits.add(toDataSourceSplit(list, fio, context));
     }
 
     logger.info("Number of splits [%d]", splits.size());
@@ -147,51 +147,42 @@ public class DatasourceInputFormat extends InputFormat<NullWritable, InputRow>
     return new DatasourceRecordReader();
   }
 
-  private Supplier<org.apache.hadoop.mapred.InputFormat> supplier = new Supplier<org.apache.hadoop.mapred.InputFormat>()
+  private Supplier<InputFormat<LongWritable, Text>> supplier = () -> new TextInputFormat()
   {
+    //Always consider non-splittable as we only want to get location of blocks for the segment
+    //and not consider the splitting.
+    //also without this, isSplitable(..) fails with NPE because compressionCodecs is not properly setup.
     @Override
-    public org.apache.hadoop.mapred.InputFormat get()
+    protected boolean isSplitable(JobContext jobContext, Path file)
     {
-      return new TextInputFormat()
-      {
-        //Always consider non-splittable as we only want to get location of blocks for the segment
-        //and not consider the splitting.
-        //also without this, isSplitable(..) fails with NPE because compressionCodecs is not properly setup.
-        @Override
-        protected boolean isSplitable(FileSystem fs, Path file)
-        {
-          return false;
-        }
+      return false;
+    }
 
-        @Override
-        protected FileStatus[] listStatus(JobConf job) throws IOException
-        {
-          // to avoid globbing which needs input path should be hadoop-compatible (':' is not acceptable in path, etc.)
-          List<FileStatus> statusList = Lists.newArrayList();
-          for (Path path : FileInputFormat.getInputPaths(job)) {
-            // load spec in segment points specifically zip file itself
-            statusList.add(path.getFileSystem(job).getFileStatus(path));
-          }
-          return statusList.toArray(new FileStatus[statusList.size()]);
-        }
-      };
+    @Override
+    protected List<FileStatus> listStatus(JobContext job) throws IOException
+    {
+      // to avoid globbing which needs input path should be hadoop-compatible (':' is not acceptable in path, etc.)
+      List<FileStatus> statusList = Lists.newArrayList();
+      for (Path path : FileInputFormat.getInputPaths(job)) {
+        // load spec in segment points specifically zip file itself
+        statusList.add(path.getFileSystem(job.getConfiguration()).getFileStatus(path));
+      }
+      return statusList;
     }
   };
 
   @VisibleForTesting
-  DatasourceInputFormat setSupplier(Supplier<org.apache.hadoop.mapred.InputFormat> supplier)
+  DatasourceInputFormat setSupplier(Supplier<InputFormat<LongWritable, Text>> supplier)
   {
     this.supplier = supplier;
     return this;
   }
 
   private DatasourceInputSplit toDataSourceSplit(
-      List<WindowedDataSegment> segments,
-      org.apache.hadoop.mapred.InputFormat fio,
-      JobConf conf
+          List<WindowedDataSegment> segments, InputFormat<LongWritable, Text> fio, JobContext jobContext
   )
   {
-    String[] locations = getFrequentLocations(getLocations(segments, fio, conf));
+    String[] locations = getFrequentLocations(getLocations(segments, fio, jobContext));
 
     return new DatasourceInputSplit(segments, locations);
   }
@@ -199,24 +190,33 @@ public class DatasourceInputFormat extends InputFormat<NullWritable, InputRow>
   @VisibleForTesting
   static Stream<String> getLocations(
       final List<WindowedDataSegment> segments,
-      final org.apache.hadoop.mapred.InputFormat fio,
-      final JobConf conf
+      final InputFormat<LongWritable, Text> fio,
+      final JobContext jobContext
   )
   {
     return segments.stream().sequential().flatMap(
         (final WindowedDataSegment segment) -> {
-          FileInputFormat.setInputPaths(
-              conf,
-              new Path(JobHelper.getURIFromSegment(segment.getSegment()))
-          );
           try {
-            return Arrays.stream(fio.getSplits(conf, 1)).flatMap(
-                (final org.apache.hadoop.mapred.InputSplit split) -> {
+
+            // For reasons unknown, the setInputPaths method requires the concrete class of Job as the first argument.
+            // However, the InputFormat.getSplits() method is only given the abstract JobContext. To avoid a potentially
+            // unsafe cast, we use the implementation detail: setInputPaths only takes the job's configuration.
+            // Therefore, a dummy Job instance backed by the real configuration is made.
+            FileInputFormat.setInputPaths(
+                    new HadoopJobHolder(jobContext.getConfiguration()),
+                    new Path(JobHelper.getURIFromSegment(segment.getSegment()))
+            );
+
+            return fio.getSplits(jobContext).stream().flatMap(
+                (final InputSplit split) -> {
                   try {
                     return Arrays.stream(split.getLocations());
                   }
                   catch (final IOException e) {
                     logger.error(e, "Exception getting locations");
+                    return Stream.empty();
+                  } catch (InterruptedException e) {
+                    logger.error(e, "Interrupted while getting locations");
                     return Stream.empty();
                   }
                 }
@@ -224,6 +224,9 @@ public class DatasourceInputFormat extends InputFormat<NullWritable, InputRow>
           }
           catch (final IOException e) {
             logger.error(e, "Exception getting splits");
+            return Stream.empty();
+          } catch (InterruptedException e) {
+            logger.error(e, "Interrupted while getting splits");
             return Stream.empty();
           }
         }

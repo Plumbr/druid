@@ -31,14 +31,17 @@ import io.druid.indexer.JobHelper;
 import io.druid.jackson.DefaultObjectMapper;
 import io.druid.timeline.DataSegment;
 import io.druid.timeline.partition.NoneShardSpec;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.easymock.EasyMock;
@@ -158,11 +161,11 @@ public class DatasourceInputFormatTest
     );
 
     context = EasyMock.createMock(JobContext.class);
-    EasyMock.expect(context.getConfiguration()).andReturn(config);
+    EasyMock.expect(context.getConfiguration()).andReturn(config).anyTimes();
     EasyMock.replay(context);
   }
 
-  private Supplier<InputFormat> testFormatter = new Supplier<InputFormat>() {
+  private Supplier<InputFormat<LongWritable, Text>> testFormatter = new Supplier<InputFormat<LongWritable, Text>>() {
     @Override
     public InputFormat get()
     {
@@ -174,20 +177,20 @@ public class DatasourceInputFormatTest
       return new TextInputFormat()
       {
         @Override
-        protected boolean isSplitable(FileSystem fs, Path file) {
+        protected boolean isSplitable(JobContext context, Path file) {
           return false;
         }
 
         @Override
-        protected FileStatus[] listStatus(JobConf job) throws IOException
+        protected List<FileStatus> listStatus(JobContext job) throws IOException
         {
           Path[] dirs = getInputPaths(job);
           if (dirs.length == 0) {
             throw new IOException("No input paths specified in job");
           }
-          FileStatus[] status = new FileStatus[dirs.length];
+          List<FileStatus> status = new ArrayList<>();
           for (int i = 0; i < dirs.length; i++) {
-            status[i] = locationMap.get(dirs[i].getName());
+            status.add(locationMap.get(dirs[i].getName()));
           }
           return status;
         }
@@ -308,7 +311,7 @@ public class DatasourceInputFormatTest
     );
 
     final JobContext myContext = EasyMock.createMock(JobContext.class);
-    EasyMock.expect(myContext.getConfiguration()).andReturn(myConfig);
+    EasyMock.expect(myContext.getConfiguration()).andReturn(myConfig).anyTimes();
     EasyMock.replay(myContext);
 
     final List<InputSplit> splits = new DatasourceInputFormat().getSplits(myContext);
@@ -355,76 +358,53 @@ public class DatasourceInputFormatTest
   }
 
   @Test
-  public void testGetLocationsInputFormatException() throws IOException
-  {
-    final org.apache.hadoop.mapred.InputFormat fio = EasyMock.mock(
-        org.apache.hadoop.mapred.InputFormat.class
-    );
+  public void testGetLocationsInputFormatException() throws IOException, InterruptedException {
+    final InputFormat fio = EasyMock.mock(InputFormat.class);
 
-    EasyMock.expect(fio.getSplits(config, 1)).andThrow(new IOException("testing"));
+    EasyMock.expect(fio.getSplits(context)).andThrow(new IOException("testing"));
     EasyMock.replay(fio);
 
     Assert.assertEquals(
         0,
-        DatasourceInputFormat.getLocations(segments.subList(0, 1), fio, config).count()
+        DatasourceInputFormat.getLocations(segments.subList(0, 1), fio, context).count()
     );
   }
 
   @Test
-  public void testGetLocationsSplitException() throws IOException
-  {
-    final org.apache.hadoop.mapred.InputFormat fio = EasyMock.mock(
-        org.apache.hadoop.mapred.InputFormat.class
-    );
+  public void testGetLocationsSplitException() throws IOException, InterruptedException {
+    final InputFormat fio  = EasyMock.mock(InputFormat.class);
+    final InputSplit split = EasyMock.mock(InputSplit.class);
 
-    final org.apache.hadoop.mapred.InputSplit split = EasyMock.mock(
-        org.apache.hadoop.mapred.InputSplit.class
-    );
-
-    EasyMock.expect(fio.getSplits(config, 1)).andReturn(
-        new org.apache.hadoop.mapred.InputSplit[] {split}
-    );
+    EasyMock.expect(fio.getSplits(context)).andReturn(Collections.singletonList(split));
     EasyMock.expect(split.getLocations()).andThrow(new IOException("testing"));
 
     EasyMock.replay(fio, split);
 
     Assert.assertEquals(
         0,
-        DatasourceInputFormat.getLocations(segments.subList(0, 1), fio, config).count()
+        DatasourceInputFormat.getLocations(segments.subList(0, 1), fio, context).count()
     );
   }
 
   @Test
-  public void testGetLocations() throws IOException
-  {
-    final org.apache.hadoop.mapred.InputFormat fio = EasyMock.mock(
-        org.apache.hadoop.mapred.InputFormat.class
-    );
+  public void testGetLocations() throws IOException, InterruptedException {
+    final InputFormat fio  = EasyMock.mock(InputFormat.class);
+    final InputSplit split = EasyMock.mock(InputSplit.class);
 
-    final org.apache.hadoop.mapred.InputSplit split = EasyMock.mock(
-        org.apache.hadoop.mapred.InputSplit.class
-    );
-
-    EasyMock.expect(fio.getSplits(config, 1)).andReturn(
-        new org.apache.hadoop.mapred.InputSplit[] {split}
-    );
+    EasyMock.expect(fio.getSplits(context)).andReturn(Collections.singletonList(split));
     EasyMock.expect(split.getLocations()).andReturn(new String[] {"s1", "s2"});
 
-    EasyMock.expect(fio.getSplits(config, 1)).andReturn(
-        new org.apache.hadoop.mapred.InputSplit[] {split}
-    );
+    EasyMock.expect(fio.getSplits(context)).andReturn(Collections.singletonList(split));
     EasyMock.expect(split.getLocations()).andReturn(new String[] {"s3"});
 
-    EasyMock.expect(fio.getSplits(config, 1)).andReturn(
-        new org.apache.hadoop.mapred.InputSplit[] {split}
-    );
+    EasyMock.expect(fio.getSplits(context)).andReturn(Collections.singletonList(split));
     EasyMock.expect(split.getLocations()).andReturn(new String[] {"s4", "s2"});
 
     EasyMock.replay(fio, split);
 
     Assert.assertArrayEquals(
         new String[] {"s1", "s2", "s3", "s4", "s2"},
-        DatasourceInputFormat.getLocations(segments, fio, config).toArray(String[]::new)
+        DatasourceInputFormat.getLocations(segments, fio, context).toArray(String[]::new)
     );
   }
 }
