@@ -76,6 +76,11 @@ public class TestBroker implements Closeable
     props.setProperty("log.dirs", directory.toString());
     props.setProperty("broker.id", String.valueOf(id));
     props.setProperty("port", String.valueOf(new Random().nextInt(9999) + 10000));
+
+    // Suppress warnings from the defaults that are not meant for tests
+    props.setProperty("offsets.topic.num.partitions", "1");
+    props.setProperty("offsets.topic.replication.factor", "1");
+
     props.putAll(brokerProps);
 
     final KafkaConfig config = new KafkaConfig(props);

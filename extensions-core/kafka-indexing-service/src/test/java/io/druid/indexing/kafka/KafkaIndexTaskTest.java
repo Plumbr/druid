@@ -1135,6 +1135,7 @@ public class KafkaIndexTaskTest
         {
         }
     );
+
     Assert.assertEquals(KafkaIndexTask.Status.PAUSED, task.getStatus());
 
     // Insert remaining data

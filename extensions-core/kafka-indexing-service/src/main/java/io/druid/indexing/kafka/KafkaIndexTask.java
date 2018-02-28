@@ -288,10 +288,12 @@ public class KafkaIndexTask extends AbstractTask implements ChatHandler
         )
     );
 
+    // Mutable because it needs to be re-created to work around a bug in kafka clients (TODO: link)
+    KafkaConsumer<byte[], byte[]> consumer = newConsumer();
+
     try (
         final Appenderator appenderator0 = newAppenderator(fireDepartmentMetrics, toolbox);
         final AppenderatorDriver driver = newDriver(appenderator0, toolbox, fireDepartmentMetrics);
-        final KafkaConsumer<byte[], byte[]> consumer = newConsumer()
     ) {
       toolbox.getDataSegmentServerAnnouncer().announce();
 
@@ -398,6 +400,13 @@ public class KafkaIndexTask extends AbstractTask implements ChatHandler
           }
           catch (OffsetOutOfRangeException e) {
             log.warn("OffsetOutOfRangeException with message [%s]", e.getMessage());
+
+            // Recreating to work around a bug in kafka clients (TODO: link)
+            log.info("Re-creating kafka consumer");
+            consumer.close();
+            consumer = newConsumer();
+            assignment = assignPartitionsAndSeekToNext(consumer, topic);
+
             possiblyResetOffsetsOrWait(e.offsetOutOfRangePartitions(), consumer, toolbox);
             stillReading = ioConfig.isPauseAfterRead() || !assignment.isEmpty();
           }
@@ -592,6 +601,9 @@ public class KafkaIndexTask extends AbstractTask implements ChatHandler
       if (chatHandlerProvider.isPresent()) {
         chatHandlerProvider.get().unregister(getId());
       }
+
+      // Closing manually because it's not part of `try-with-resources` because it cannot be made `final`
+      consumer.close();
     }
 
     toolbox.getDataSegmentServerAnnouncer().unannounce();
