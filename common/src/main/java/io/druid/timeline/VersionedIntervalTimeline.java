@@ -277,6 +277,9 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
         VersionType sourceVersion = getSourceVersion(entry.getValue().getVersion());
         TimelineEntry sourceEntry = sourceVersion != null ? versionEntry.get(sourceVersion) : null;
 
+        // If there is a source version entry present in the overshadowed segment map, filter its partitions to exclude
+        // the segments that are not present in this version, as they can be present in the return value of lookup due
+        // to partitions from source version explicitly being added if they are missing from generated version.
         if (sourceEntry != null) {
           PartitionHolder<ObjectType> overshadowedSourceChunks = new PartitionHolder<>(Collections.emptyList());
 

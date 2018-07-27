@@ -290,39 +290,30 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
         .bind(1, interval.getEnd().toString())
         .bind(2, interval.getStart().toString());
 
-    final ResultIterator<byte[]> dbSegments = sql
-        .map(ByteArrayMapper.FIRST)
-        .iterator();
+    try (final ResultIterator<byte[]> dbSegments = sql.map(ByteArrayMapper.FIRST).iterator()) {
+      final List<DataSegment> segments = new ArrayList<>();
+      final Set<Pair<Interval, String>> sourceVersions = new HashSet<>();
 
-    final List<DataSegment> segments = new ArrayList<>();
-    final Set<Pair<Interval, String>> sourceVersions = new HashSet<>();
+      while (dbSegments.hasNext()) {
+        final byte[] payload = dbSegments.next();
 
-    while (dbSegments.hasNext()) {
-      final byte[] payload = dbSegments.next();
+        DataSegment segment = jsonMapper.readValue(
+            payload,
+            DataSegment.class
+        );
 
-      DataSegment segment = jsonMapper.readValue(
-          payload,
-          DataSegment.class
-      );
+        String sourceSegmentVersion = SegmentGenerationUtils.getSourceVersion(segment.getVersion());
 
-      String sourceSegmentVersion = SegmentGenerationUtils.getSourceVersion(segment.getVersion());
-
-      if (sourceSegmentVersion != null) {
-        sourceVersions.add(new Pair<>(segment.getInterval(), sourceSegmentVersion));
-      } else {
-        segments.add(segment);
+        if (sourceSegmentVersion != null) {
+          sourceVersions.add(new Pair<>(segment.getInterval(), sourceSegmentVersion));
+        } else {
+          segments.add(segment);
+        }
       }
+
+      segments.addAll(collectSourceSegments(handle, dataSource, sourceVersions));
+      return VersionedIntervalTimeline.forSegments(segments);
     }
-
-    segments.addAll(collectSourceSegments(handle, dataSource, sourceVersions));
-
-    final VersionedIntervalTimeline<String, DataSegment> timeline = VersionedIntervalTimeline.forSegments(
-        segments
-    );
-
-    dbSegments.close();
-
-    return timeline;
   }
 
   private List<DataSegment> collectSourceSegments(
