@@ -604,6 +604,7 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
     // For each timeline entry, add partitions from the source version that do not exist for the existing timeline
     // object. These are added as a separate entry to the list.
 
+    // Iterate only the initial items, more items may be added during iteration.
     for (int i = 0; i < initialSize; i++) {
       TimelineObjectHolder<VersionType, ObjectType> latestVersion = holders.get(i);
       VersionType sourceVersion = getSourceVersion(latestVersion.getVersion());
