@@ -78,7 +78,8 @@ public class DruidCoordinatorCleanupOvershadowed implements DruidCoordinatorHelp
       //Remove all segments in db that are overshadowed by served segments
       for (DataSegment dataSegment : params.getAvailableSegments()) {
         VersionedIntervalTimeline<String, DataSegment> timeline = timelines.get(dataSegment.getDataSource());
-        if (timeline != null && timeline.isOvershadowed(dataSegment.getInterval(), dataSegment.getVersion())) {
+        if (timeline != null && timeline.isOvershadowed(dataSegment.getInterval(), dataSegment.getVersion(),
+            dataSegment.getShardSpec().getPartitionNum())) {
           coordinator.removeSegment(dataSegment);
           stats.addToGlobalStat("overShadowedCount", 1);
         }
