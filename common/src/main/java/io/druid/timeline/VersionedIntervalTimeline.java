@@ -30,6 +30,7 @@ import io.druid.java.util.common.guava.Comparators;
 import io.druid.timeline.partition.ImmutablePartitionHolder;
 import io.druid.timeline.partition.PartitionChunk;
 import io.druid.timeline.partition.PartitionHolder;
+import java.util.Collections;
 import org.joda.time.Interval;
 
 import java.util.ArrayList;
@@ -236,25 +237,8 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
         overShadowed.put(versionEntry.getKey(), versionCopy);
       }
 
-      for (Map.Entry<Interval, TimelineEntry> entry : completePartitionsTimeline.entrySet()) {
-        Map<VersionType, TimelineEntry> versionEntry = overShadowed.get(entry.getValue().getTrueInterval());
-        if (versionEntry != null) {
-          versionEntry.remove(entry.getValue().getVersion());
-          if (versionEntry.isEmpty()) {
-            overShadowed.remove(entry.getValue().getTrueInterval());
-          }
-        }
-      }
-
-      for (Map.Entry<Interval, TimelineEntry> entry : incompletePartitionsTimeline.entrySet()) {
-        Map<VersionType, TimelineEntry> versionEntry = overShadowed.get(entry.getValue().getTrueInterval());
-        if (versionEntry != null) {
-          versionEntry.remove(entry.getValue().getVersion());
-          if (versionEntry.isEmpty()) {
-            overShadowed.remove(entry.getValue().getTrueInterval());
-          }
-        }
-      }
+      removeActiveFromOverShadowed(completePartitionsTimeline, overShadowed);
+      removeActiveFromOverShadowed(incompletePartitionsTimeline, overShadowed);
 
       for (Map.Entry<Interval, Map<VersionType, TimelineEntry>> versionEntry : overShadowed.entrySet()) {
         for (Map.Entry<VersionType, TimelineEntry> entry : versionEntry.getValue().entrySet()) {
@@ -276,14 +260,70 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
     }
   }
 
+  private void removeActiveFromOverShadowed(
+      NavigableMap<Interval, TimelineEntry> timeline,
+      Map<Interval, Map<VersionType, TimelineEntry>> overShadowed
+  )
+  {
+
+    for (Map.Entry<Interval, TimelineEntry> entry : timeline.entrySet()) {
+      Map<VersionType, TimelineEntry> versionEntry = overShadowed.get(entry.getValue().getTrueInterval());
+      if (versionEntry != null) {
+        versionEntry.remove(entry.getValue().getVersion());
+        if (versionEntry.isEmpty()) {
+          overShadowed.remove(entry.getValue().getTrueInterval());
+        }
+
+        VersionType sourceVersion = getSourceVersion(entry.getValue().getVersion());
+        TimelineEntry sourceEntry = sourceVersion != null ? versionEntry.get(sourceVersion) : null;
+
+        if (sourceEntry != null) {
+          PartitionHolder<ObjectType> overshadowedSourceChunks = new PartitionHolder<>(Collections.emptyList());
+
+          for (PartitionChunk<ObjectType> chunk : sourceEntry.partitionHolder) {
+            if (entry.getValue().partitionHolder.getChunk(chunk.getChunkNumber()) != null) {
+              overshadowedSourceChunks.add(chunk);
+            }
+          }
+
+          if (overshadowedSourceChunks.isEmpty()) {
+            versionEntry.remove(sourceEntry.getVersion());
+            if (versionEntry.isEmpty()) {
+              overShadowed.remove(entry.getValue().getTrueInterval());
+            }
+          } else if (overshadowedSourceChunks.size() < sourceEntry.partitionHolder.size()) {
+            versionEntry.put(sourceEntry.version, new TimelineEntry(sourceEntry.trueInterval, sourceEntry.version,
+                overshadowedSourceChunks));
+          }
+        }
+      }
+    }
+  }
+
   public boolean isOvershadowed(Interval interval, VersionType version)
+  {
+    return isOvershadowed(interval, version, -1);
+  }
+
+  public boolean isOvershadowed(Interval interval, VersionType version, int partitionNum)
   {
     try {
       lock.readLock().lock();
 
       TimelineEntry entry = completePartitionsTimeline.get(interval);
       if (entry != null) {
-        return versionComparator.compare(version, entry.getVersion()) < 0;
+        if (versionComparator.compare(version, entry.getVersion()) < 0) {
+          VersionType sourceVersion = getSourceVersion(entry.getVersion());
+
+          // Returns false (not overshadowed) only if the partition number was specified, the latest complete version is
+          // a generation of the currently checked version, and the latest version does not contain that partition.
+          return partitionNum < 0 ||
+              sourceVersion == null ||
+              versionComparator.compare(version, sourceVersion) != 0 ||
+              entry.partitionHolder.getChunk(partitionNum) != null;
+        } else {
+          return false;
+        }
       }
 
       Interval lower = completePartitionsTimeline.floorKey(
@@ -524,6 +564,8 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
       return retVal;
     }
 
+    complementWithSourceVersionSegments(retVal);
+
     TimelineObjectHolder<VersionType, ObjectType> firstEntry = retVal.get(0);
     if (interval.overlaps(firstEntry.getInterval()) && interval.getStart()
                                                                .isAfter(firstEntry.getInterval().getStart())) {
@@ -550,6 +592,48 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
     }
 
     return retVal;
+  }
+
+  private void complementWithSourceVersionSegments(List<TimelineObjectHolder<VersionType, ObjectType>> holders)
+  {
+    int initialSize = holders.size();
+
+    // For each timeline entry, add partitions from the source version that do not exist for the existing timeline
+    // object. These are added as a separate entry to the list.
+
+    for (int i = 0; i < initialSize; i++) {
+      TimelineObjectHolder<VersionType, ObjectType> latestVersion = holders.get(i);
+      VersionType sourceVersion = getSourceVersion(latestVersion.getVersion());
+
+      if (sourceVersion != null) {
+        TreeMap<VersionType, TimelineEntry> allVersions = allTimelineEntries.get(latestVersion.getInterval());
+        TimelineEntry sourceEntry = allVersions != null ? allVersions.get(sourceVersion) : null;
+
+        if (sourceEntry != null) {
+          TimelineObjectHolder<VersionType, ObjectType> complementingVersion = null;
+
+          for (PartitionChunk<ObjectType> partition : sourceEntry.partitionHolder) {
+            if (latestVersion.getObject().getChunk(partition.getChunkNumber()) == null) {
+              if (complementingVersion == null) {
+                complementingVersion = new TimelineObjectHolder<>(sourceEntry.trueInterval, sourceEntry.version,
+                    new PartitionHolder<>(Collections.emptyList()));
+                holders.add(complementingVersion);
+              }
+
+              complementingVersion.getObject().add(partition);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private VersionType getSourceVersion(VersionType version) {
+    if (version instanceof String) {
+      return (VersionType) SegmentGenerationUtils.getSourceVersion((String) version);
+    }
+    return null;
   }
 
   public class TimelineEntry

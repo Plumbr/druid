@@ -38,17 +38,21 @@ import io.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import io.druid.indexing.overlord.SegmentPublishResult;
 import io.druid.java.util.common.IAE;
 import io.druid.java.util.common.ISE;
+import io.druid.java.util.common.Pair;
 import io.druid.java.util.common.StringUtils;
 import io.druid.java.util.common.lifecycle.LifecycleStart;
 import io.druid.java.util.common.logger.Logger;
 import io.druid.segment.realtime.appenderator.SegmentIdentifier;
 import io.druid.timeline.DataSegment;
+import io.druid.timeline.SegmentGenerationUtils;
 import io.druid.timeline.TimelineObjectHolder;
 import io.druid.timeline.VersionedIntervalTimeline;
 import io.druid.timeline.partition.LinearShardSpec;
 import io.druid.timeline.partition.NoneShardSpec;
 import io.druid.timeline.partition.NumberedShardSpec;
 import io.druid.timeline.partition.PartitionChunk;
+import java.util.Collections;
+import java.util.HashSet;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.skife.jdbi.v2.FoldController;
@@ -267,6 +271,118 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
     return timeline;
   }
 
+  private VersionedIntervalTimeline<String, DataSegment> getTimelineForAllocationWithHandle(
+      final Handle handle,
+      final String dataSource,
+      final Interval interval
+  ) throws IOException
+  {
+
+    Query<Map<String, Object>> sql = handle
+        .createQuery(
+            String.format(
+                "SELECT payload FROM %s WHERE used = true AND dataSource = ? AND (start <= ? AND %2$send%2$s >= ?)",
+                dbTables.getSegmentsTable(),
+                connector.getQuoteString()
+            )
+        )
+        .bind(0, dataSource)
+        .bind(1, interval.getEnd().toString())
+        .bind(2, interval.getStart().toString());
+
+    final ResultIterator<byte[]> dbSegments = sql
+        .map(ByteArrayMapper.FIRST)
+        .iterator();
+
+    final List<DataSegment> segments = new ArrayList<>();
+    final Set<Pair<Interval, String>> sourceVersions = new HashSet<>();
+
+    while (dbSegments.hasNext()) {
+      final byte[] payload = dbSegments.next();
+
+      DataSegment segment = jsonMapper.readValue(
+          payload,
+          DataSegment.class
+      );
+
+      String sourceSegmentVersion = SegmentGenerationUtils.getSourceVersion(segment.getVersion());
+
+      if (sourceSegmentVersion != null) {
+        sourceVersions.add(new Pair<>(segment.getInterval(), sourceSegmentVersion));
+      } else {
+        segments.add(segment);
+      }
+    }
+
+    segments.addAll(collectSourceSegments(handle, dataSource, sourceVersions));
+
+    final VersionedIntervalTimeline<String, DataSegment> timeline = VersionedIntervalTimeline.forSegments(
+        segments
+    );
+
+    dbSegments.close();
+
+    return timeline;
+  }
+
+  private List<DataSegment> collectSourceSegments(
+      final Handle handle,
+      final String dataSource,
+      final Set<Pair<Interval, String>> sourceVersions
+  ) throws IOException
+  {
+    if (sourceVersions.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    final String[] identifiers = new String[sourceVersions.size()];
+    int index = 0;
+
+    for (Pair<Interval, String> sourceVersion : sourceVersions) {
+      identifiers[index++] = DataSegment.makeDataSegmentIdentifier(dataSource, sourceVersion.lhs.getStart(),
+          sourceVersion.lhs.getEnd(), sourceVersion.rhs, NoneShardSpec.instance());
+    }
+
+    Query<Map<String, Object>> sql = handle
+        .createQuery(
+            String.format(
+                "SELECT payload FROM %s WHERE dataSource = ? AND id LIKE ? AND version IN (%s)",
+                dbTables.getSegmentsTable(),
+                String.join(",", Collections.nCopies(sourceVersions.size(), "?"))
+            )
+        )
+        .bind(0, dataSource)
+        .bind(1, org.apache.commons.lang.StringUtils.getCommonPrefix(identifiers));
+
+    index = 0;
+
+    for (Pair<Interval, String> sourceVersion : sourceVersions) {
+      sql.bind(2 + index++, sourceVersion.rhs);
+    }
+
+    final List<DataSegment> results = new ArrayList<>();
+
+    try (final ResultIterator<byte[]> dbSegments = sql
+        .map(ByteArrayMapper.FIRST)
+        .iterator()) {
+
+      while (dbSegments.hasNext()) {
+        final byte[] payload = dbSegments.next();
+
+        DataSegment segment = jsonMapper.readValue(
+            payload,
+            DataSegment.class
+        );
+
+        if (sourceVersions.contains(new Pair<>(segment.getInterval(), segment.getVersion()))) {
+          results.add(segment);
+        }
+      }
+    }
+
+    return results;
+  }
+
   /**
    * Attempts to insert a set of segments to the database. Returns the set of segments actually added (segments
    * with identifiers already in the database will not be added).
@@ -451,10 +567,10 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
 
             final SegmentIdentifier newIdentifier;
 
-            final List<TimelineObjectHolder<String, DataSegment>> existingChunks = getTimelineForIntervalsWithHandle(
+            final List<TimelineObjectHolder<String, DataSegment>> existingChunks = getTimelineForAllocationWithHandle(
                 handle,
                 dataSource,
-                ImmutableList.of(interval)
+                interval
             ).lookup(interval);
 
             if (existingChunks.size() > 1) {
