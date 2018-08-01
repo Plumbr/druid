@@ -334,6 +334,8 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
           sourceVersion.lhs.getEnd(), sourceVersion.rhs, NoneShardSpec.instance());
     }
 
+    String identifierPrefix = org.apache.commons.lang.StringUtils.getCommonPrefix(identifiers) + "%";
+
     Query<Map<String, Object>> sql = handle
         .createQuery(
             String.format(
@@ -343,7 +345,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
             )
         )
         .bind(0, dataSource)
-        .bind(1, org.apache.commons.lang.StringUtils.getCommonPrefix(identifiers));
+        .bind(1, identifierPrefix);
 
     index = 0;
 
@@ -352,6 +354,7 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
     }
 
     final List<DataSegment> results = new ArrayList<>();
+    int falsePositiveCount = 0;
 
     try (final ResultIterator<byte[]> dbSegments = sql
         .map(ByteArrayMapper.FIRST)
@@ -367,9 +370,15 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
 
         if (sourceVersions.contains(new Pair<>(segment.getInterval(), segment.getVersion()))) {
           results.add(segment);
+        } else {
+          falsePositiveCount++;
         }
       }
     }
+
+    log.debug("Collecting corresponding source segments for segment allocation for [%s], result is [%d] segments and " +
+        "[%d] false positives (identifier prefix [%s]).", sourceVersions, results.size(), falsePositiveCount,
+        identifierPrefix);
 
     return results;
   }
