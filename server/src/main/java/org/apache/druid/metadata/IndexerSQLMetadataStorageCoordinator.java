@@ -22,7 +22,6 @@ package org.apache.druid.metadata;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -42,6 +41,8 @@ import org.apache.druid.java.util.common.lifecycle.LifecycleStart;
 import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.segment.realtime.appenderator.SegmentIdWithShardSpec;
 import org.apache.druid.timeline.DataSegment;
+import org.apache.druid.timeline.SegmentGenerationUtils;
+import org.apache.druid.timeline.SegmentId;
 import org.apache.druid.timeline.TimelineObjectHolder;
 import org.apache.druid.timeline.VersionedIntervalTimeline;
 import org.apache.druid.timeline.partition.LinearShardSpec;
@@ -68,6 +69,7 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -169,6 +171,117 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
     dbSegments.close();
 
     return identifiers;
+  }
+
+  private VersionedIntervalTimeline<String, DataSegment> getTimelineForAllocationWithHandle(
+          final Handle handle,
+          final String dataSource,
+          final Interval interval
+  ) throws IOException
+  {
+
+    Query<Map<String, Object>> sql = handle
+            .createQuery(
+                    StringUtils.format(
+                            "SELECT payload FROM %s WHERE used = true AND dataSource = ? AND (start <= ? AND %2$send%2$s >= ?)",
+                            dbTables.getSegmentsTable(),
+                            connector.getQuoteString()
+                    )
+            )
+            .bind(0, dataSource)
+            .bind(1, interval.getEnd().toString())
+            .bind(2, interval.getStart().toString());
+
+    try (final ResultIterator<byte[]> dbSegments = sql.map(ByteArrayMapper.FIRST).iterator()) {
+      final List<DataSegment> segments = new ArrayList<>();
+      final Set<Pair<Interval, String>> sourceVersions = new HashSet<>();
+
+      while (dbSegments.hasNext()) {
+        final byte[] payload = dbSegments.next();
+
+        DataSegment segment = jsonMapper.readValue(
+                payload,
+                DataSegment.class
+        );
+
+        String sourceSegmentVersion = SegmentGenerationUtils.getSourceVersion(segment.getVersion());
+
+        if (sourceSegmentVersion != null) {
+          sourceVersions.add(new Pair<>(segment.getInterval(), sourceSegmentVersion));
+        } else {
+          segments.add(segment);
+        }
+      }
+
+      segments.addAll(collectSourceSegments(handle, dataSource, sourceVersions));
+      return VersionedIntervalTimeline.forSegments(segments);
+    }
+  }
+
+  private List<DataSegment> collectSourceSegments(
+          final Handle handle,
+          final String dataSource,
+          final Set<Pair<Interval, String>> sourceVersions
+  ) throws IOException
+  {
+    if (sourceVersions.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    final String[] identifiers = new String[sourceVersions.size()];
+    int index = 0;
+
+    for (Pair<Interval, String> sourceVersion : sourceVersions) {
+      identifiers[index++] = SegmentId.of(dataSource, sourceVersion.lhs, sourceVersion.rhs, 0).toString();
+    }
+
+    final String identifierPrefix = org.apache.commons.lang.StringUtils.getCommonPrefix(identifiers) + "%";
+
+    Query<Map<String, Object>> sql = handle
+            .createQuery(
+                    StringUtils.format(
+                            "SELECT payload FROM %s WHERE dataSource = ? AND id LIKE ? AND version IN (%s)",
+                            dbTables.getSegmentsTable(),
+                            String.join(",", Collections.nCopies(sourceVersions.size(), "?"))
+                    )
+            )
+            .bind(0, dataSource)
+            .bind(1, identifierPrefix);
+
+    index = 0;
+
+    for (Pair<Interval, String> sourceVersion : sourceVersions) {
+      sql.bind(2 + index++, sourceVersion.rhs);
+    }
+
+    final List<DataSegment> results = new ArrayList<>();
+    int falsePositiveCount = 0;
+
+    try (final ResultIterator<byte[]> dbSegments = sql
+            .map(ByteArrayMapper.FIRST)
+            .iterator()) {
+
+      while (dbSegments.hasNext()) {
+        final byte[] payload = dbSegments.next();
+
+        DataSegment segment = jsonMapper.readValue(
+                payload,
+                DataSegment.class
+        );
+
+        if (sourceVersions.contains(new Pair<>(segment.getInterval(), segment.getVersion()))) {
+          results.add(segment);
+        } else {
+          falsePositiveCount++;
+        }
+      }
+    }
+
+    log.debug("Collecting corresponding source segments for segment allocation for [%s], result is [%d] segments and " +
+                    "[%d] false positives (identifier prefix [%s]).", sourceVersions, results.size(), falsePositiveCount,
+            identifierPrefix);
+
+    return results;
   }
 
   private VersionedIntervalTimeline<String, DataSegment> getTimelineForIntervalsWithHandle(
@@ -621,10 +734,10 @@ public class IndexerSQLMetadataStorageCoordinator implements IndexerMetadataStor
     // assuming that all tasks inserting segments at a particular point in time are going through the
     // allocatePendingSegment flow. This should be assured through some other mechanism (like task locks).
 
-    final List<TimelineObjectHolder<String, DataSegment>> existingChunks = getTimelineForIntervalsWithHandle(
+    final List<TimelineObjectHolder<String, DataSegment>> existingChunks = getTimelineForAllocationWithHandle(
         handle,
         dataSource,
-        ImmutableList.of(interval)
+        interval
     ).lookup(interval);
 
     if (existingChunks.size() > 1) {

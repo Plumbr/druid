@@ -96,8 +96,8 @@ public class NumberedPartitionChunk<T> implements PartitionChunk<T>
     if (other instanceof NumberedPartitionChunk) {
       final NumberedPartitionChunk castedOther = (NumberedPartitionChunk) other;
       return ComparisonChain.start()
-                            .compare(chunks, castedOther.chunks)
                             .compare(chunkNumber, castedOther.chunkNumber)
+                            .compare(chunks, castedOther.chunks)
                             .result();
     } else {
       throw new IllegalArgumentException("Cannot compare against something that is not a NumberedPartitionChunk.");

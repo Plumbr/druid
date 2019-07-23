@@ -60,6 +60,11 @@ public class PartitionHolder<T> implements Iterable<PartitionChunk<T>>
     holderSet.add(chunk);
   }
 
+  public int size()
+  {
+    return holderSet.size();
+  }
+
   public PartitionChunk<T> remove(PartitionChunk<T> chunk)
   {
     if (!holderSet.isEmpty()) {
