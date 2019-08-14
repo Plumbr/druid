@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.jackson.DefaultObjectMapper;
 import org.apache.druid.java.util.common.DateTimes;
@@ -265,7 +264,7 @@ public class KinesisIOConfigTest
             ImmutableMap.of("1", "10L", "2", "5L"),
             ImmutableSet.of("1")
         ),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of("1", "20L", "2", "30L")),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of("1", "20L", "2", "30L")),
         true,
         DateTimes.nowUtc(),
         DateTimes.nowUtc(),
@@ -315,8 +314,8 @@ public class KinesisIOConfigTest
 
     final OldKinesisIndexTaskIoConfig oldConfig = new OldKinesisIndexTaskIoConfig(
         "baseSequenceName",
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of("1", "10L", "2", "5L")),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of("1", "20L", "2", "30L")),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of("1", "10L", "2", "5L")),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of("1", "20L", "2", "30L")),
         ImmutableSet.of("1"),
         true,
         DateTimes.nowUtc(),
@@ -357,8 +356,8 @@ public class KinesisIOConfigTest
   private static class OldKinesisIndexTaskIoConfig implements IOConfig
   {
     private final String baseSequenceName;
-    private final SeekableStreamEndSequenceNumbers<String, String> startPartitions;
-    private final SeekableStreamEndSequenceNumbers<String, String> endPartitions;
+    private final SeekableStreamStartSequenceNumbers<String, String> startPartitions;
+    private final SeekableStreamStartSequenceNumbers<String, String> endPartitions;
     private final Set<String> exclusiveStartSequenceNumberPartitions;
     private final boolean useTransaction;
     private final Optional<DateTime> minimumMessageTime;
@@ -374,8 +373,8 @@ public class KinesisIOConfigTest
     @JsonCreator
     private OldKinesisIndexTaskIoConfig(
         @JsonProperty("baseSequenceName") String baseSequenceName,
-        @JsonProperty("startPartitions") @Nullable SeekableStreamEndSequenceNumbers<String, String> startPartitions,
-        @JsonProperty("endPartitions") @Nullable SeekableStreamEndSequenceNumbers<String, String> endPartitions,
+        @JsonProperty("startPartitions") @Nullable SeekableStreamStartSequenceNumbers<String, String> startPartitions,
+        @JsonProperty("endPartitions") @Nullable SeekableStreamStartSequenceNumbers<String, String> endPartitions,
         @JsonProperty("exclusiveStartSequenceNumberPartitions") Set<String> exclusiveStartSequenceNumberPartitions,
         @JsonProperty("useTransaction") Boolean useTransaction,
         @JsonProperty("minimumMessageTime") DateTime minimumMessageTime,
@@ -410,13 +409,13 @@ public class KinesisIOConfigTest
     }
 
     @JsonProperty
-    public SeekableStreamEndSequenceNumbers<String, String> getStartPartitions()
+    public SeekableStreamStartSequenceNumbers<String, String> getStartPartitions()
     {
       return startPartitions;
     }
 
     @JsonProperty
-    public SeekableStreamEndSequenceNumbers<String, String> getEndPartitions()
+    public SeekableStreamStartSequenceNumbers<String, String> getEndPartitions()
     {
       return endPartitions;
     }

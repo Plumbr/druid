@@ -26,9 +26,9 @@ import org.apache.druid.data.input.impl.InputRowParser;
 import org.apache.druid.indexing.common.TaskToolbox;
 import org.apache.druid.indexing.common.stats.RowIngestionMetersFactory;
 import org.apache.druid.indexing.seekablestream.SeekableStreamDataSourceMetadata;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskRunner;
 import org.apache.druid.indexing.seekablestream.SeekableStreamSequenceNumbers;
+import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SequenceMetadata;
 import org.apache.druid.indexing.seekablestream.common.OrderedPartitionableRecord;
 import org.apache.druid.indexing.seekablestream.common.OrderedSequenceNumber;
@@ -113,14 +113,14 @@ public class IncrementalPublishingKafkaIndexTaskRunner extends SeekableStreamInd
   }
 
   @Override
-  protected SeekableStreamEndSequenceNumbers<Integer, Long> deserializePartitionsFromMetadata(
+  protected SeekableStreamStartSequenceNumbers<Integer, Long> deserializePartitionsFromMetadata(
       ObjectMapper mapper,
       Object object
   )
   {
     return mapper.convertValue(object, mapper.getTypeFactory().constructParametrizedType(
-        SeekableStreamEndSequenceNumbers.class,
-        SeekableStreamEndSequenceNumbers.class,
+        SeekableStreamStartSequenceNumbers.class,
+        SeekableStreamStartSequenceNumbers.class,
         Integer.class,
         Long.class
     ));

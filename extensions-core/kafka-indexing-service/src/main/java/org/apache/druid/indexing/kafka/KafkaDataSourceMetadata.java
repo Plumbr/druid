@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.druid.indexing.overlord.DataSourceMetadata;
 import org.apache.druid.indexing.seekablestream.SeekableStreamDataSourceMetadata;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamSequenceNumbers;
+import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 
 public class KafkaDataSourceMetadata extends SeekableStreamDataSourceMetadata<Integer, Long>
 {
@@ -41,10 +41,8 @@ public class KafkaDataSourceMetadata extends SeekableStreamDataSourceMetadata<In
   public DataSourceMetadata asStartMetadata()
   {
     final SeekableStreamSequenceNumbers<Integer, Long> sequenceNumbers = getSeekableStreamSequenceNumbers();
-    if (sequenceNumbers instanceof SeekableStreamEndSequenceNumbers) {
-      return createConcreteDataSourceMetaData(
-          ((SeekableStreamEndSequenceNumbers<Integer, Long>) sequenceNumbers).asStartPartitions(true)
-      );
+    if (sequenceNumbers instanceof SeekableStreamStartSequenceNumbers) {
+      return createConcreteDataSourceMetaData(sequenceNumbers);
     } else {
       return this;
     }

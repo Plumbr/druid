@@ -81,6 +81,14 @@ public class SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetT
     this(stream, null, partitionSequenceNumberMap, null, exclusivePartitions);
   }
 
+  public SeekableStreamStartSequenceNumbers(
+      String stream,
+      Map<PartitionIdType, SequenceOffsetType> partitionSequenceNumberMap
+  )
+  {
+    this(stream, null, partitionSequenceNumberMap, null, Collections.emptySet());
+  }
+
   @Override
   @JsonProperty
   public String getStream()

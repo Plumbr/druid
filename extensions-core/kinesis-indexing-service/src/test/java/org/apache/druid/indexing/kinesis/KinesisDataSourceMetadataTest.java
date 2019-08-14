@@ -22,7 +22,6 @@ package org.apache.druid.indexing.kinesis;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -231,6 +230,6 @@ public class KinesisDataSourceMetadataTest
 
   private static KinesisDataSourceMetadata endMetadata(Map<String, String> sequences)
   {
-    return new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>("foo", sequences));
+    return new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>("foo", sequences));
   }
 }

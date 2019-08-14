@@ -35,7 +35,7 @@ public abstract class SeekableStreamIndexTaskIOConfig<PartitionIdType, SequenceO
   private final Integer taskGroupId;
   private final String baseSequenceName;
   private final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> startSequenceNumbers;
-  private final SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> endSequenceNumbers;
+  private final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> endSequenceNumbers;
   private final boolean useTransaction;
   private final Optional<DateTime> minimumMessageTime;
   private final Optional<DateTime> maximumMessageTime;
@@ -44,7 +44,7 @@ public abstract class SeekableStreamIndexTaskIOConfig<PartitionIdType, SequenceO
       final @Nullable Integer taskGroupId, // can be null for backward compabitility
       final String baseSequenceName,
       final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> startSequenceNumbers,
-      final SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> endSequenceNumbers,
+      final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> endSequenceNumbers,
       final Boolean useTransaction,
       final DateTime minimumMessageTime,
       final DateTime maximumMessageTime
@@ -91,7 +91,7 @@ public abstract class SeekableStreamIndexTaskIOConfig<PartitionIdType, SequenceO
   }
 
   @JsonProperty
-  public SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> getEndSequenceNumbers()
+  public SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> getEndSequenceNumbers()
   {
     return endSequenceNumbers;
   }

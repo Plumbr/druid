@@ -57,7 +57,6 @@ import org.apache.druid.indexing.overlord.TaskRunnerListener;
 import org.apache.druid.indexing.overlord.TaskRunnerWorkItem;
 import org.apache.druid.indexing.overlord.TaskStorage;
 import org.apache.druid.indexing.overlord.supervisor.SupervisorReport;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskTuningConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.common.RecordSupplier;
@@ -619,7 +618,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId0, "0", shardId1, "0"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "12")),
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "12")),
         null,
         null
     );
@@ -692,7 +691,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12")),
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12")),
         null,
         null
     );
@@ -701,7 +700,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         1,
         new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of(shardId0)),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
         null,
         null
     );
@@ -713,7 +712,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             stream,
             ImmutableMap.of(shardId0, "0", shardId1, "0"), ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "12")),
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "12")),
         null,
         null
     );
@@ -722,7 +721,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of(shardId0)),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
         null,
         null
     );
@@ -916,7 +915,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -1307,7 +1306,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -1459,7 +1458,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -1602,7 +1601,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -1623,7 +1622,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             "stream",
             ImmutableMap.of(shardId1, "2", shardId0, "1"), ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2101,7 +2100,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2128,7 +2127,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2150,7 +2149,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "3", shardId0, "1"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2414,7 +2413,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2436,7 +2435,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "3", shardId0, "1"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2458,7 +2457,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "3", shardId0, "1"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2558,7 +2557,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2580,7 +2579,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2602,7 +2601,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2703,7 +2702,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2725,7 +2724,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2747,7 +2746,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2877,7 +2876,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2899,7 +2898,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2921,7 +2920,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "10", shardId0, "20"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -2997,7 +2996,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(shardId1, KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER)
         ),
@@ -3010,7 +3009,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(shardId1, "0"), ImmutableSet.of(shardId1)),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(shardId1, KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER)
         ),
@@ -3023,7 +3022,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(shardId1, "0"), ImmutableSet.of(shardId1)),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(shardId1, KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER)
         ),
@@ -3160,7 +3159,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "0", shardId0, "0"),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -3182,7 +3181,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "3", shardId0, "1"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -3204,7 +3203,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ImmutableMap.of(shardId1, "3", shardId0, "1"),
             ImmutableSet.of(shardId0, shardId1)
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "stream",
             ImmutableMap.of(
                 shardId1,
@@ -3409,7 +3408,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(
             shardId0,
             "1",
             shardId1,
@@ -3506,7 +3505,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(
             shardId0,
             "1",
             shardId1,
@@ -3615,7 +3614,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             shardId1,
             "3"
         ), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(
             shardId1,
             KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER
         )),
@@ -3631,7 +3630,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             shardId1,
             "3"
         ), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(
             shardId1,
             KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER
         )),
@@ -3647,7 +3646,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             shardId1,
             "3"
         ), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(
             shardId1,
             KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER
         )),
@@ -3668,7 +3667,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
             ),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(
             shardId1,
             KinesisSequenceNumber.NO_END_SEQUENCE_NUMBER
         )),
@@ -4087,7 +4086,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
       String dataSource,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<String, String> startPartitions,
-      SeekableStreamEndSequenceNumbers<String, String> endPartitions,
+      SeekableStreamStartSequenceNumbers<String, String> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime
   )
@@ -4107,7 +4106,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
       String id,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<String, String> startPartitions,
-      SeekableStreamEndSequenceNumbers<String, String> endPartitions,
+      SeekableStreamStartSequenceNumbers<String, String> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime,
       DataSchema dataSchema
@@ -4129,7 +4128,7 @@ public class KinesisSupervisorTest extends EasyMockSupport
       String id,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<String, String> startPartitions,
-      SeekableStreamEndSequenceNumbers<String, String> endPartitions,
+      SeekableStreamStartSequenceNumbers<String, String> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime,
       DataSchema dataSchema,

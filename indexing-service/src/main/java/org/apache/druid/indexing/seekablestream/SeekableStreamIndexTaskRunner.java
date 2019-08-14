@@ -399,7 +399,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
       } else {
         @SuppressWarnings("unchecked")
         final Map<String, Object> restoredMetadataMap = (Map) restoredMetadata;
-        final SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> restoredNextPartitions =
+        final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> restoredNextPartitions =
             deserializePartitionsFromMetadata(
                 toolbox.getObjectMapper(),
                 restoredMetadataMap.get(METADATA_NEXT_PARTITIONS)
@@ -469,7 +469,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
           @Override
           public Object getMetadata()
           {
-            return ImmutableMap.of(METADATA_NEXT_PARTITIONS, new SeekableStreamEndSequenceNumbers<>(stream, snapshot));
+            return ImmutableMap.of(METADATA_NEXT_PARTITIONS, new SeekableStreamStartSequenceNumbers<>(stream, snapshot));
           }
 
           @Override
@@ -686,7 +686,7 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
                     )
                 ),
                 createDataSourceMetadata(
-                    new SeekableStreamEndSequenceNumbers<>(
+                    new SeekableStreamStartSequenceNumbers<>(
                         stream,
                         currOffsets
                     )
@@ -1807,9 +1807,9 @@ public abstract class SeekableStreamIndexTaskRunner<PartitionIdType, SequenceOff
    * @param mapper json objectMapper
    * @param object metadata
    *
-   * @return SeekableStreamEndSequenceNumbers
+   * @return SeekableStreamStartSequenceNumbers
    */
-  protected abstract SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> deserializePartitionsFromMetadata(
+  protected abstract SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> deserializePartitionsFromMetadata(
       ObjectMapper mapper,
       Object object
   );

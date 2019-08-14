@@ -23,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.druid.indexing.overlord.DataSourceMetadata;
 import org.apache.druid.indexing.seekablestream.SeekableStreamDataSourceMetadata;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamSequenceNumbers;
+import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 
 public class KinesisDataSourceMetadata extends SeekableStreamDataSourceMetadata<String, String>
 {
@@ -40,10 +40,8 @@ public class KinesisDataSourceMetadata extends SeekableStreamDataSourceMetadata<
   public DataSourceMetadata asStartMetadata()
   {
     final SeekableStreamSequenceNumbers<String, String> sequenceNumbers = getSeekableStreamSequenceNumbers();
-    if (sequenceNumbers instanceof SeekableStreamEndSequenceNumbers) {
-      return createConcreteDataSourceMetaData(
-          ((SeekableStreamEndSequenceNumbers<String, String>) sequenceNumbers).asStartPartitions(false)
-      );
+    if (sequenceNumbers instanceof SeekableStreamStartSequenceNumbers) {
+      return createConcreteDataSourceMetaData(sequenceNumbers);
     } else {
       return this;
     }

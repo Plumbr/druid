@@ -48,7 +48,6 @@ import org.apache.druid.indexing.common.stats.RowIngestionMetersFactory;
 import org.apache.druid.indexing.common.task.IndexTaskUtils;
 import org.apache.druid.indexing.common.task.RealtimeIndexTask;
 import org.apache.druid.indexing.seekablestream.SeekableStreamDataSourceMetadata;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTask;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskRunner;
 import org.apache.druid.indexing.seekablestream.SeekableStreamSequenceNumbers;
@@ -304,7 +303,7 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
         nextOffsets.putAll(ioConfig.getStartSequenceNumbers().getPartitionSequenceNumberMap());
       } else {
         final Map<String, Object> restoredMetadataMap = (Map) restoredMetadata;
-        final SeekableStreamEndSequenceNumbers<Integer, Long> restoredNextPartitions = toolbox.getObjectMapper().convertValue(
+        final SeekableStreamStartSequenceNumbers<Integer, Long> restoredNextPartitions = toolbox.getObjectMapper().convertValue(
             restoredMetadataMap.get(METADATA_NEXT_PARTITIONS),
             toolbox.getObjectMapper().getTypeFactory().constructParametrizedType(
                 SeekableStreamStartSequenceNumbers.class,
@@ -354,7 +353,7 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
             {
               return ImmutableMap.of(
                   METADATA_NEXT_PARTITIONS,
-                  new SeekableStreamEndSequenceNumbers<>(
+                  new SeekableStreamStartSequenceNumbers<>(
                       ioConfig.getStartSequenceNumbers().getStream(),
                       snapshot
                   )
@@ -504,13 +503,13 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
       }
 
       final TransactionalSegmentPublisher publisher = (segments, commitMetadata) -> {
-        final SeekableStreamEndSequenceNumbers<Integer, Long> finalPartitions = toolbox.getObjectMapper().convertValue(
+        final SeekableStreamStartSequenceNumbers<Integer, Long> finalPartitions = toolbox.getObjectMapper().convertValue(
             ((Map) Preconditions.checkNotNull(commitMetadata, "commitMetadata")).get(METADATA_NEXT_PARTITIONS),
             toolbox.getObjectMapper()
                    .getTypeFactory()
                    .constructParametrizedType(
-                       SeekableStreamEndSequenceNumbers.class,
-                       SeekableStreamEndSequenceNumbers.class,
+                       SeekableStreamStartSequenceNumbers.class,
+                       SeekableStreamStartSequenceNumbers.class,
                        Integer.class,
                        Long.class
                    )
@@ -714,7 +713,7 @@ public class LegacyKafkaIndexTaskRunner extends SeekableStreamIndexTaskRunner<In
   }
 
   @Override
-  protected SeekableStreamEndSequenceNumbers<Integer, Long> deserializePartitionsFromMetadata(
+  protected SeekableStreamStartSequenceNumbers<Integer, Long> deserializePartitionsFromMetadata(
       ObjectMapper mapper,
       Object object
   )

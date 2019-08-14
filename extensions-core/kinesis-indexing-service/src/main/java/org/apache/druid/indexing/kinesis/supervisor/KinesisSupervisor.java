@@ -40,7 +40,6 @@ import org.apache.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import org.apache.druid.indexing.overlord.TaskMaster;
 import org.apache.druid.indexing.overlord.TaskStorage;
 import org.apache.druid.indexing.seekablestream.SeekableStreamDataSourceMetadata;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTask;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskIOConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskTuningConfig;
@@ -132,7 +131,7 @@ public class KinesisSupervisor extends SeekableStreamSupervisor<String, String>
             startPartitions,
             exclusiveStartSequenceNumberPartitions
         ),
-        new SeekableStreamEndSequenceNumbers<>(ioConfig.getStream(), endPartitions),
+        new SeekableStreamStartSequenceNumbers<>(ioConfig.getStream(), endPartitions),
         true,
         minimumMessageTime,
         maximumMessageTime,

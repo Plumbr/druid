@@ -21,7 +21,6 @@ package org.apache.druid.indexing.kafka;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.junit.Assert;
 import org.junit.Test;
@@ -168,6 +167,6 @@ public class KafkaDataSourceMetadataTest
 
   private static KafkaDataSourceMetadata endMetadata(Map<Integer, Long> offsets)
   {
-    return new KafkaDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>("foo", offsets));
+    return new KafkaDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>("foo", offsets));
   }
 }

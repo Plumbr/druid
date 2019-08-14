@@ -278,7 +278,7 @@ public class SequenceMetadata<PartitionIdType, SequenceOffsetType>
                   SeekableStreamIndexTaskRunner.METADATA_NEXT_PARTITIONS,
                   new SeekableStreamStartSequenceNumbers<>(stream, lastPersistedOffsets, exclusiveStartPartitions),
                   SeekableStreamIndexTaskRunner.METADATA_PUBLISH_PARTITIONS,
-                  new SeekableStreamEndSequenceNumbers<>(stream, endOffsets)
+                  new SeekableStreamStartSequenceNumbers<>(stream, endOffsets)
               );
             }
             finally {
@@ -303,7 +303,7 @@ public class SequenceMetadata<PartitionIdType, SequenceOffsetType>
   {
     return (segments, commitMetadata) -> {
       final Map commitMetaMap = (Map) Preconditions.checkNotNull(commitMetadata, "commitMetadata");
-      final SeekableStreamEndSequenceNumbers<PartitionIdType, SequenceOffsetType> finalPartitions =
+      final SeekableStreamStartSequenceNumbers<PartitionIdType, SequenceOffsetType> finalPartitions =
           runner.deserializePartitionsFromMetadata(
               toolbox.getObjectMapper(),
               commitMetaMap.get(SeekableStreamIndexTaskRunner.METADATA_PUBLISH_PARTITIONS)

@@ -61,7 +61,6 @@ import org.apache.druid.indexing.overlord.TaskRunnerListener;
 import org.apache.druid.indexing.overlord.TaskRunnerWorkItem;
 import org.apache.druid.indexing.overlord.TaskStorage;
 import org.apache.druid.indexing.overlord.supervisor.SupervisorReport;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskRunner.Status;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskTuningConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
@@ -651,7 +650,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         "other-datasource",
         2,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, 10L)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L)),
         null,
         null
     );
@@ -708,7 +707,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
         null,
         null
     );
@@ -717,7 +716,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         1,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(1, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(1, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(1, Long.MAX_VALUE)),
         null,
         null
     );
@@ -726,7 +725,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -738,7 +737,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE)),
         null,
         null
     );
@@ -747,7 +746,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(1, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(1, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
         null,
         null
     );
@@ -907,7 +906,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
         now,
         maxi
     );
@@ -1203,7 +1202,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -1318,7 +1317,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
         null,
         null
     );
@@ -1426,7 +1425,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -1439,7 +1438,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 1L, 1, 2L, 2, 3L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -1795,7 +1794,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -1808,7 +1807,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -1821,7 +1820,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2016,7 +2015,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2029,7 +2028,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2042,7 +2041,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2113,7 +2112,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2126,7 +2125,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2139,7 +2138,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2209,7 +2208,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2222,7 +2221,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2235,7 +2234,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2329,7 +2328,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2342,7 +2341,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2355,7 +2354,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             topic,
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2426,7 +2425,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
         null,
         null
     );
@@ -2436,7 +2435,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
         null,
         null
     );
@@ -2446,7 +2445,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>(topic, ImmutableMap.of(0, Long.MAX_VALUE)),
         null,
         null
     );
@@ -2558,7 +2557,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 0L, 1, 0L, 2, 0L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2571,7 +2570,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2584,7 +2583,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
         DATASOURCE,
         0,
         new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, 10L, 1, 20L, 2, 30L), ImmutableSet.of()),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 1, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2850,7 +2849,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 0L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -2922,7 +2921,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 0L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
+        new SeekableStreamStartSequenceNumbers<>("topic", ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)),
         null,
         null
     );
@@ -3019,7 +3018,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 0L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -3036,7 +3035,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 0L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -3053,7 +3052,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 0L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -3071,7 +3070,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
             ImmutableMap.of(0, 0L, 2, 6L),
             ImmutableSet.of()
         ),
-        new SeekableStreamEndSequenceNumbers<>(
+        new SeekableStreamStartSequenceNumbers<>(
             "topic",
             ImmutableMap.of(0, Long.MAX_VALUE, 2, Long.MAX_VALUE)
         ),
@@ -3424,7 +3423,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
       String dataSource,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions,
-      SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions,
+      SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime
   )
@@ -3444,7 +3443,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
       String id,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions,
-      SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions,
+      SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime,
       DataSchema schema
@@ -3466,7 +3465,7 @@ public class KafkaSupervisorTest extends EasyMockSupport
       String id,
       int taskGroupId,
       SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions,
-      SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions,
+      SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime,
       DataSchema schema,

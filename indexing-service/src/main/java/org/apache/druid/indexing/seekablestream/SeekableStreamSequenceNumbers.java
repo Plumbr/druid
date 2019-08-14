@@ -27,10 +27,10 @@ import org.apache.druid.indexing.overlord.DataSourceMetadata;
 
 import java.util.Map;
 
-@JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = SeekableStreamEndSequenceNumbers.class)
+@JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = SeekableStreamStartSequenceNumbers.class)
 @JsonSubTypes({
     @Type(name = "start", value = SeekableStreamStartSequenceNumbers.class),
-    @Type(name = "end", value = SeekableStreamEndSequenceNumbers.class)
+    @Type(name = "end", value = SeekableStreamStartSequenceNumbers.class)
 })
 public interface SeekableStreamSequenceNumbers<PartitionIdType, SequenceOffsetType>
 {

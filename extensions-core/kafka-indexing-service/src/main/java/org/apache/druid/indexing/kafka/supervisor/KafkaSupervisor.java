@@ -38,7 +38,6 @@ import org.apache.druid.indexing.overlord.DataSourceMetadata;
 import org.apache.druid.indexing.overlord.IndexerMetadataStorageCoordinator;
 import org.apache.druid.indexing.overlord.TaskMaster;
 import org.apache.druid.indexing.overlord.TaskStorage;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTask;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskIOConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskTuningConfig;
@@ -213,7 +212,7 @@ public class KafkaSupervisor extends SeekableStreamSupervisor<Integer, Long>
         groupId,
         baseSequenceName,
         new SeekableStreamStartSequenceNumbers<>(kafkaIoConfig.getTopic(), startPartitions, Collections.emptySet()),
-        new SeekableStreamEndSequenceNumbers<>(kafkaIoConfig.getTopic(), endPartitions),
+        new SeekableStreamStartSequenceNumbers<>(kafkaIoConfig.getTopic(), endPartitions),
         kafkaIoConfig.getConsumerProperties(),
         kafkaIoConfig.getPollTimeout(),
         true,

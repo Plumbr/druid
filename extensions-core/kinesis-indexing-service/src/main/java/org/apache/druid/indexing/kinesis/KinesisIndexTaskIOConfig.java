@@ -22,7 +22,6 @@ package org.apache.druid.indexing.kinesis;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskIOConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.joda.time.DateTime;
@@ -50,16 +49,16 @@ public class KinesisIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<St
       // below three deprecated variables exist to be able to read old ioConfigs in metadata store
       @JsonProperty("startPartitions")
       @Nullable
-      @Deprecated SeekableStreamEndSequenceNumbers<String, String> startPartitions,
+      @Deprecated SeekableStreamStartSequenceNumbers<String, String> startPartitions,
       @JsonProperty("endPartitions")
       @Nullable
-      @Deprecated SeekableStreamEndSequenceNumbers<String, String> endPartitions,
+      @Deprecated SeekableStreamStartSequenceNumbers<String, String> endPartitions,
       @JsonProperty("exclusiveStartSequenceNumberPartitions")
       @Nullable
       @Deprecated Set<String> exclusiveStartSequenceNumberPartitions,
       // startSequenceNumbers and endSequenceNumbers must be set for new versions
       @JsonProperty("startSequenceNumbers") SeekableStreamStartSequenceNumbers<String, String> startSequenceNumbers,
-      @JsonProperty("endSequenceNumbers") SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers,
+      @JsonProperty("endSequenceNumbers") SeekableStreamStartSequenceNumbers<String, String> endSequenceNumbers,
       @JsonProperty("useTransaction") Boolean useTransaction,
       @JsonProperty("minimumMessageTime") DateTime minimumMessageTime,
       @JsonProperty("maximumMessageTime") DateTime maximumMessageTime,
@@ -100,7 +99,7 @@ public class KinesisIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<St
       int taskGroupId,
       String baseSequenceName,
       SeekableStreamStartSequenceNumbers<String, String> startSequenceNumbers,
-      SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers,
+      SeekableStreamStartSequenceNumbers<String, String> endSequenceNumbers,
       Boolean useTransaction,
       DateTime minimumMessageTime,
       DateTime maximumMessageTime,
@@ -134,7 +133,7 @@ public class KinesisIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<St
 
   private static SeekableStreamStartSequenceNumbers<String, String> getStartSequenceNumbers(
       @Nullable SeekableStreamStartSequenceNumbers<String, String> newStartSequenceNumbers,
-      @Nullable SeekableStreamEndSequenceNumbers<String, String> oldStartSequenceNumbers,
+      @Nullable SeekableStreamStartSequenceNumbers<String, String> oldStartSequenceNumbers,
       @Nullable Set<String> exclusiveStartSequenceNumberPartitions
   )
   {
@@ -159,15 +158,15 @@ public class KinesisIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<St
    * old version of Druid. Note that this method returns end sequence numbers instead of start. This is because
    * {@link SeekableStreamStartSequenceNumbers} didn't exist before.
    *
-   * A SeekableStreamEndSequenceNumbers (has no exclusivity info) is returned here because the Kinesis extension
+   * A SeekableStreamStartSequenceNumbers (has no exclusivity info) is returned here because the Kinesis extension
    * previously stored exclusivity info separately in exclusiveStartSequenceNumberPartitions.
    */
   @JsonProperty
   @Deprecated
-  public SeekableStreamEndSequenceNumbers<String, String> getStartPartitions()
+  public SeekableStreamStartSequenceNumbers<String, String> getStartPartitions()
   {
     final SeekableStreamStartSequenceNumbers<String, String> startSequenceNumbers = getStartSequenceNumbers();
-    return new SeekableStreamEndSequenceNumbers<>(
+    return new SeekableStreamStartSequenceNumbers<>(
         startSequenceNumbers.getStream(),
         startSequenceNumbers.getPartitionSequenceNumberMap()
     );
@@ -179,7 +178,7 @@ public class KinesisIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<St
    */
   @JsonProperty
   @Deprecated
-  public SeekableStreamEndSequenceNumbers<String, String> getEndPartitions()
+  public SeekableStreamStartSequenceNumbers<String, String> getEndPartitions()
   {
     return getEndSequenceNumbers();
   }

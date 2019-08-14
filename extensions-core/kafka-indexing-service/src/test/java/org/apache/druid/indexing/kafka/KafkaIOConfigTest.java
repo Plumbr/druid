@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.jackson.DefaultObjectMapper;
 import org.apache.druid.java.util.common.DateTimes;
@@ -311,7 +310,7 @@ public class KafkaIOConfigTest
         null,
         null,
         new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(1, 10L, 2, 5L), null),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(1, 20L, 2, 30L)),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(1, 20L, 2, 30L)),
         ImmutableMap.of("consumer", "properties"),
         100L,
         true,
@@ -326,7 +325,7 @@ public class KafkaIOConfigTest
 
     Assert.assertEquals(currentConfig.getTaskGroupId().intValue(), oldConfig.taskGroupId);
     Assert.assertEquals(currentConfig.getBaseSequenceName(), oldConfig.baseSequenceName);
-    Assert.assertEquals(currentConfig.getStartSequenceNumbers(), oldConfig.startPartitions.asStartPartitions(true));
+    Assert.assertEquals(currentConfig.getStartSequenceNumbers(), oldConfig.startPartitions);
     Assert.assertEquals(currentConfig.getEndSequenceNumbers(), oldConfig.getEndPartitions());
     Assert.assertEquals(currentConfig.getConsumerProperties(), oldConfig.getConsumerProperties());
     Assert.assertEquals(currentConfig.getPollTimeout(), oldConfig.getPollTimeout());
@@ -344,8 +343,8 @@ public class KafkaIOConfigTest
     final OldKafkaIndexTaskIoConfig oldConfig = new OldKafkaIndexTaskIoConfig(
         0,
         "baseSequenceNamee",
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(1, 10L, 2, 5L)),
-        new SeekableStreamEndSequenceNumbers<>("stream", ImmutableMap.of(1, 20L, 2, 30L)),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(1, 10L, 2, 5L)),
+        new SeekableStreamStartSequenceNumbers<>("stream", ImmutableMap.of(1, 20L, 2, 30L)),
         ImmutableMap.of("consumer", "properties"),
         100L,
         true,
@@ -357,7 +356,7 @@ public class KafkaIOConfigTest
     final KafkaIndexTaskIOConfig currentConfig = (KafkaIndexTaskIOConfig) mapper.readValue(json, IOConfig.class);
     Assert.assertEquals(oldConfig.getTaskGroupId(), currentConfig.getTaskGroupId().intValue());
     Assert.assertEquals(oldConfig.getBaseSequenceName(), currentConfig.getBaseSequenceName());
-    Assert.assertEquals(oldConfig.getStartPartitions().asStartPartitions(true), currentConfig.getStartSequenceNumbers());
+    Assert.assertEquals(oldConfig.getStartPartitions(), currentConfig.getStartSequenceNumbers());
     Assert.assertEquals(oldConfig.getEndPartitions(), currentConfig.getEndSequenceNumbers());
     Assert.assertEquals(oldConfig.getConsumerProperties(), currentConfig.getConsumerProperties());
     Assert.assertEquals(oldConfig.getPollTimeout(), currentConfig.getPollTimeout());
@@ -370,8 +369,8 @@ public class KafkaIOConfigTest
   {
     private final int taskGroupId;
     private final String baseSequenceName;
-    private final SeekableStreamEndSequenceNumbers<Integer, Long> startPartitions;
-    private final SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions;
+    private final SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions;
+    private final SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions;
     private final Map<String, Object> consumerProperties;
     private final long pollTimeout;
     private final boolean useTransaction;
@@ -382,8 +381,8 @@ public class KafkaIOConfigTest
     private OldKafkaIndexTaskIoConfig(
         @JsonProperty("taskGroupId") int taskGroupId,
         @JsonProperty("baseSequenceName") String baseSequenceName,
-        @JsonProperty("startPartitions") @Nullable SeekableStreamEndSequenceNumbers<Integer, Long> startPartitions,
-        @JsonProperty("endPartitions") @Nullable SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions,
+        @JsonProperty("startPartitions") @Nullable SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions,
+        @JsonProperty("endPartitions") @Nullable SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions,
         @JsonProperty("consumerProperties") Map<String, Object> consumerProperties,
         @JsonProperty("pollTimeout") Long pollTimeout,
         @JsonProperty("useTransaction") Boolean useTransaction,
@@ -415,13 +414,13 @@ public class KafkaIOConfigTest
     }
 
     @JsonProperty
-    public SeekableStreamEndSequenceNumbers<Integer, Long> getStartPartitions()
+    public SeekableStreamStartSequenceNumbers<Integer, Long> getStartPartitions()
     {
       return startPartitions;
     }
 
     @JsonProperty
-    public SeekableStreamEndSequenceNumbers<Integer, Long> getEndPartitions()
+    public SeekableStreamStartSequenceNumbers<Integer, Long> getEndPartitions()
     {
       return endPartitions;
     }

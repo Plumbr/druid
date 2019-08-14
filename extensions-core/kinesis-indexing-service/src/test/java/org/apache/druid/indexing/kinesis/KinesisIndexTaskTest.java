@@ -82,7 +82,6 @@ import org.apache.druid.indexing.overlord.MetadataTaskStorage;
 import org.apache.druid.indexing.overlord.TaskLockbox;
 import org.apache.druid.indexing.overlord.TaskStorage;
 import org.apache.druid.indexing.overlord.supervisor.SupervisorManager;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskRunner;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SequenceMetadata;
@@ -402,7 +401,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -434,7 +433,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -472,7 +471,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
             true,
             null,
             null,
@@ -503,7 +502,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -545,12 +544,12 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         ImmutableSet.of()
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint1 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint1 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "4", shardId0, "0")
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> endPartitions = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> endPartitions = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "9", shardId0, "1")
     );
@@ -591,7 +590,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
                 DATA_SCHEMA.getDataSource(),
                 0,
                 new KinesisDataSourceMetadata(startPartitions),
-                new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, currentOffsets))
+                new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, currentOffsets))
             )
         )
     );
@@ -612,7 +611,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4, desc5, desc6, desc7), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(
+            new SeekableStreamStartSequenceNumbers<>(
                 stream,
                 ImmutableMap.of(shardId1, "9", shardId0, "1")
             )
@@ -667,15 +666,15 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     );
     // Checkpointing will happen at either checkpoint1 or checkpoint2 depending on ordering
     // of events fetched across two partitions from Kafka
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint1 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint1 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "2")
     );
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint2 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint2 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "9")
     );
-    final SeekableStreamEndSequenceNumbers<String, String> endPartitions = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> endPartitions = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "10")
     );
@@ -729,7 +728,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
                 DATA_SCHEMA.getDataSource(),
                 0,
                 new KinesisDataSourceMetadata(startPartitions),
-                new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, currentOffsets))
+                new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, currentOffsets))
             )
         )
     );
@@ -741,7 +740,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
                 new KinesisDataSourceMetadata(
                     new SeekableStreamStartSequenceNumbers<>(stream, currentOffsets, currentOffsets.keySet())
                 ),
-                new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, nextOffsets))
+                new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, nextOffsets))
             )
         )
     );
@@ -760,7 +759,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     SegmentDescriptor desc7 = sd(task, "2013/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4, desc5, desc7), publishedDescriptors());
     Assert.assertEquals(
-        new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "10"))),
+        new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "10"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -798,7 +797,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             DateTimes.of("2010"),
             null,
@@ -833,7 +832,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     SegmentDescriptor desc2 = sd(task, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
+        new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -867,7 +866,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             DateTimes.of("2010"),
@@ -904,7 +903,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -947,7 +946,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -982,7 +981,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -1018,7 +1017,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2")),
             true,
             null,
             null,
@@ -1074,7 +1073,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1105,7 +1104,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1143,7 +1142,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1174,7 +1173,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1215,7 +1214,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
             true,
             null,
             null,
@@ -1274,7 +1273,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12")),
             true,
             null,
             null,
@@ -1311,7 +1310,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "12"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1374,7 +1373,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
             true,
             null,
             null,
@@ -1456,7 +1455,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1474,7 +1473,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1510,7 +1509,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1548,7 +1547,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1566,7 +1565,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "3"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
             true,
             null,
             null,
@@ -1601,7 +1600,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     SegmentDescriptor desc2 = sd(task1, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
+        new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -1638,7 +1637,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             false,
             null,
             null,
@@ -1656,7 +1655,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "3"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9")),
             false,
             null,
             null,
@@ -1736,7 +1735,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
                 ImmutableMap.of(shardId1, "2", shardId0, "0"),
                 ImmutableSet.of()
             ),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1")),
             true,
             null,
             null,
@@ -1772,7 +1771,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc4), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1816,7 +1815,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -1834,7 +1833,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             1,
             "sequence1",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1")),
             true,
             null,
             null,
@@ -1872,7 +1871,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4", shardId0, "1"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -1912,7 +1911,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
             true,
             null,
             null,
@@ -1961,7 +1960,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5")),
             true,
             null,
             null,
@@ -2001,7 +2000,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5"))),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "5"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -2048,7 +2047,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
             true,
             null,
             null,
@@ -2061,7 +2060,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         )
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint1 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint1 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "4")
     );
@@ -2109,7 +2108,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6")),
             true,
             null,
             null,
@@ -2147,7 +2146,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(ImmutableSet.of(desc1, desc2, desc3, desc4, desc5, desc6), publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "6"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -2174,7 +2173,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "2"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "13")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "13")),
             true,
             null,
             null,
@@ -2244,7 +2243,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     SegmentDescriptor desc2 = sd(task, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(
+        new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(
             stream,
             ImmutableMap.of(shardId1, currentOffsets.get(shardId1))
         )),
@@ -2297,7 +2296,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
             0,
             "sequence0",
             new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "0"), ImmutableSet.of()),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4")),
             true,
             null,
             null,
@@ -2325,7 +2324,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     SegmentDescriptor desc2 = sd(task, "2011/P1D", 0);
     Assert.assertEquals(ImmutableSet.of(desc1, desc2), publishedDescriptors());
     Assert.assertEquals(
-        new KinesisDataSourceMetadata(new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
+        new KinesisDataSourceMetadata(new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "4"))),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
 
@@ -2376,17 +2375,17 @@ public class KinesisIndexTaskTest extends EasyMockSupport
         ImmutableSet.of()
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint1 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint1 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "4")
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> checkpoint2 = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> checkpoint2 = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "9")
     );
 
-    final SeekableStreamEndSequenceNumbers<String, String> endPartitions = new SeekableStreamEndSequenceNumbers<>(
+    final SeekableStreamStartSequenceNumbers<String, String> endPartitions = new SeekableStreamStartSequenceNumbers<>(
         stream,
         ImmutableMap.of(shardId1, "100") // simulating unlimited
     );
@@ -2481,7 +2480,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
     Assert.assertEquals(descriptors, publishedDescriptors());
     Assert.assertEquals(
         new KinesisDataSourceMetadata(
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9"))
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId1, "9"))
         ),
         metadataStorageCoordinator.getDataSourceMetadata(DATA_SCHEMA.getDataSource())
     );
@@ -2511,7 +2510,7 @@ public class KinesisIndexTaskTest extends EasyMockSupport
                 ImmutableMap.of(shardId0, "0", shardId1, "0"),
                 ImmutableSet.of(shardId0)
             ),
-            new SeekableStreamEndSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "5")),
+            new SeekableStreamStartSequenceNumbers<>(stream, ImmutableMap.of(shardId0, "1", shardId1, "5")),
             true,
             null,
             null,

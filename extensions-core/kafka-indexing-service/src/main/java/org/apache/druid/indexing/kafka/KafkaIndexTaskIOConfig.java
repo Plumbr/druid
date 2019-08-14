@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 import org.apache.druid.indexing.kafka.supervisor.KafkaSupervisorIOConfig;
-import org.apache.druid.indexing.seekablestream.SeekableStreamEndSequenceNumbers;
 import org.apache.druid.indexing.seekablestream.SeekableStreamIndexTaskIOConfig;
 import org.apache.druid.indexing.seekablestream.SeekableStreamStartSequenceNumbers;
 import org.joda.time.DateTime;
@@ -42,14 +41,14 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
       @JsonProperty("baseSequenceName") String baseSequenceName,
       // startPartitions and endPartitions exist to be able to read old ioConfigs in metadata store
       @JsonProperty("startPartitions") @Nullable
-      @Deprecated SeekableStreamEndSequenceNumbers<Integer, Long> startPartitions,
+      @Deprecated SeekableStreamStartSequenceNumbers<Integer, Long> startPartitions,
       @JsonProperty("endPartitions") @Nullable
-      @Deprecated SeekableStreamEndSequenceNumbers<Integer, Long> endPartitions,
+      @Deprecated SeekableStreamStartSequenceNumbers<Integer, Long> endPartitions,
       // startSequenceNumbers and endSequenceNumbers must be set for new versions
       @JsonProperty("startSequenceNumbers")
       @Nullable SeekableStreamStartSequenceNumbers<Integer, Long> startSequenceNumbers,
       @JsonProperty("endSequenceNumbers")
-      @Nullable SeekableStreamEndSequenceNumbers<Integer, Long> endSequenceNumbers,
+      @Nullable SeekableStreamStartSequenceNumbers<Integer, Long> endSequenceNumbers,
       @JsonProperty("consumerProperties") Map<String, Object> consumerProperties,
       @JsonProperty("pollTimeout") Long pollTimeout,
       @JsonProperty("useTransaction") Boolean useTransaction,
@@ -61,7 +60,7 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
         taskGroupId,
         baseSequenceName,
         startSequenceNumbers == null
-        ? Preconditions.checkNotNull(startPartitions, "startPartitions").asStartPartitions(true)
+        ? Preconditions.checkNotNull(startPartitions, "startPartitions")
         : startSequenceNumbers,
         endSequenceNumbers == null ? endPartitions : endSequenceNumbers,
         useTransaction,
@@ -72,7 +71,7 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
     this.consumerProperties = Preconditions.checkNotNull(consumerProperties, "consumerProperties");
     this.pollTimeout = pollTimeout != null ? pollTimeout : KafkaSupervisorIOConfig.DEFAULT_POLL_TIMEOUT_MILLIS;
 
-    final SeekableStreamEndSequenceNumbers<Integer, Long> myEndSequenceNumbers = getEndSequenceNumbers();
+    final SeekableStreamStartSequenceNumbers<Integer, Long> myEndSequenceNumbers = getEndSequenceNumbers();
     for (int partition : myEndSequenceNumbers.getPartitionSequenceNumberMap().keySet()) {
       Preconditions.checkArgument(
           myEndSequenceNumbers.getPartitionSequenceNumberMap()
@@ -88,7 +87,7 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
       int taskGroupId,
       String baseSequenceName,
       SeekableStreamStartSequenceNumbers<Integer, Long> startSequenceNumbers,
-      SeekableStreamEndSequenceNumbers<Integer, Long> endSequenceNumbers,
+      SeekableStreamStartSequenceNumbers<Integer, Long> endSequenceNumbers,
       Map<String, Object> consumerProperties,
       Long pollTimeout,
       Boolean useTransaction,
@@ -118,11 +117,11 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
    */
   @JsonProperty
   @Deprecated
-  public SeekableStreamEndSequenceNumbers<Integer, Long> getStartPartitions()
+  public SeekableStreamStartSequenceNumbers<Integer, Long> getStartPartitions()
   {
     // Converting to start sequence numbers. This is allowed for Kafka because the start offset is always inclusive.
     final SeekableStreamStartSequenceNumbers<Integer, Long> startSequenceNumbers = getStartSequenceNumbers();
-    return new SeekableStreamEndSequenceNumbers<>(
+    return new SeekableStreamStartSequenceNumbers<>(
         startSequenceNumbers.getStream(),
         startSequenceNumbers.getPartitionSequenceNumberMap()
     );
@@ -134,7 +133,7 @@ public class KafkaIndexTaskIOConfig extends SeekableStreamIndexTaskIOConfig<Inte
    */
   @JsonProperty
   @Deprecated
-  public SeekableStreamEndSequenceNumbers<Integer, Long> getEndPartitions()
+  public SeekableStreamStartSequenceNumbers<Integer, Long> getEndPartitions()
   {
     return getEndSequenceNumbers();
   }
