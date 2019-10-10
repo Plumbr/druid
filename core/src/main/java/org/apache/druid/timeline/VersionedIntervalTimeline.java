@@ -27,6 +27,7 @@ import com.google.common.collect.Ordering;
 import org.apache.druid.java.util.common.DateTimes;
 import org.apache.druid.java.util.common.UOE;
 import org.apache.druid.java.util.common.guava.Comparators;
+import org.apache.druid.java.util.common.logger.Logger;
 import org.apache.druid.timeline.partition.ImmutablePartitionHolder;
 import org.apache.druid.timeline.partition.PartitionChunk;
 import org.apache.druid.timeline.partition.PartitionHolder;
@@ -67,6 +68,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class VersionedIntervalTimeline<VersionType, ObjectType> implements TimelineLookup<VersionType, ObjectType>
 {
+
+  private static final Logger LOG = new Logger(VersionedIntervalTimeline.class);
+
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
   final NavigableMap<Interval, TimelineEntry> completePartitionsTimeline = new TreeMap<Interval, TimelineEntry>(
@@ -624,6 +628,8 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
                                                      ? incompletePartitionsTimeline
                                                      : completePartitionsTimeline;
 
+    LOG.debug("Looking up interval [%s] in timeline [%s] (incomplete: [%s])", interval, timeline, incompleteOk);
+
     for (Map.Entry<Interval, TimelineEntry> entry : timeline.entrySet()) {
       Interval timelineInterval = entry.getKey();
       TimelineEntry val = entry.getValue();
@@ -640,15 +646,18 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
       }
     }
 
+    LOG.debug("Stage one: found [%d] timeline entries: [%s]", retVal.size(), retVal);
+
     if (retVal.isEmpty()) {
       return retVal;
     }
 
-    complementWithSourceVersionSegments(retVal);
-
     TimelineObjectHolder<VersionType, ObjectType> firstEntry = retVal.get(0);
     if (interval.overlaps(firstEntry.getInterval()) && interval.getStart()
                                                                .isAfter(firstEntry.getInterval().getStart())) {
+
+      LOG.debug("Stage two: replaced interval start of first entry: [%s] -> [%s]", firstEntry.getInterval().getStart(), interval.getStart());
+
       retVal.set(
           0,
           new TimelineObjectHolder<>(
@@ -662,6 +671,9 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
 
     TimelineObjectHolder<VersionType, ObjectType> lastEntry = retVal.get(retVal.size() - 1);
     if (interval.overlaps(lastEntry.getInterval()) && interval.getEnd().isBefore(lastEntry.getInterval().getEnd())) {
+
+      LOG.debug("Stage three: replaced interval end of last entry: [%s] -> [%s]", lastEntry.getInterval().getEnd(), interval.getEnd());
+
       retVal.set(
           retVal.size() - 1,
           new TimelineObjectHolder<>(
@@ -673,10 +685,17 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
       );
     }
 
+    complementWithSourceVersionSegments(retVal, interval);
+
+    LOG.debug("Final result: [%d] timeline entries: [%s]", retVal.size(), retVal);
+
     return retVal;
   }
 
-  private void complementWithSourceVersionSegments(List<TimelineObjectHolder<VersionType, ObjectType>> holders)
+  // Looks for updater-generated segments among the holders, then checks if any partitions that are present
+  // in the source version, but missing in generated segments. If any are found, the source partitions are added.
+  private void complementWithSourceVersionSegments(List<TimelineObjectHolder<VersionType, ObjectType>> holders,
+                                                   Interval requestedInterval)
   {
     int initialSize = holders.size();
 
@@ -689,20 +708,27 @@ public class VersionedIntervalTimeline<VersionType, ObjectType> implements Timel
       VersionType sourceVersion = getSourceVersion(latestVersion.getVersion());
 
       if (sourceVersion != null) {
-        TreeMap<VersionType, TimelineEntry> allVersions = allTimelineEntries.get(latestVersion.getInterval());
+        TreeMap<VersionType, TimelineEntry> allVersions = allTimelineEntries.get(latestVersion.getTrueInterval());
         TimelineEntry sourceEntry = allVersions != null ? allVersions.get(sourceVersion) : null;
 
-        if (sourceEntry != null) {
+        if (sourceEntry != null) { // Source version exists for this segment
           TimelineObjectHolder<VersionType, ObjectType> complementingVersion = null;
 
           for (PartitionChunk<ObjectType> partition : sourceEntry.partitionHolder) {
             if (latestVersion.getObject().getChunk(partition.getChunkNumber()) == null) {
               if (complementingVersion == null) {
-                complementingVersion = new TimelineObjectHolder<>(sourceEntry.trueInterval, sourceEntry.version,
-                        new PartitionHolder<>(Collections.emptyList()));
+                complementingVersion = new TimelineObjectHolder<>(
+                        sourceEntry.trueInterval.overlap(requestedInterval), // Make sure to only return the requested interval
+                        sourceEntry.trueInterval, sourceEntry.version,
+                        new PartitionHolder<>(Collections.emptyList())
+                );
+
+                LOG.debug("Stage four: added complementing version for [%s]: [%s]", sourceEntry.version, complementingVersion);
+
                 holders.add(complementingVersion);
               }
 
+              LOG.debug("Added partition [%d] to complementing version [%s]", partition.getChunkNumber(), complementingVersion);
               complementingVersion.getObject().add(partition);
             }
           }
